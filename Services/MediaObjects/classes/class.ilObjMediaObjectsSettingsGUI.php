@@ -87,6 +87,12 @@ class ilObjMediaObjectsSettingsGUI extends ilObjectGUI
 			$ilTabs->addTarget("settings",
 				$this->ctrl->getLinkTarget($this, "editSettings"),
 				array("editSettings", "view"));
+			
+			// oc-patch start			
+			$ilTabs->addTarget("video_migration",
+				$this->ctrl->getLinkTarget($this, "videoMigration"),
+				array("videoMigration", "migrateVideos"));
+			// oc-patch start
 		}
 
 		if ($ilAccess->checkAccess('edit_permission', "", $this->object->getRefId()))
@@ -196,5 +202,102 @@ class ilObjMediaObjectsSettingsGUI extends ilObjectGUI
 		$this->form->setValuesByArray($values);
 	}
 
+	// oc-patch start
+
+	/**
+	 * videoMigration
+	 *
+	 * @param
+	 * @return
+	 */
+	function videoMigration()
+	{
+		global $ilToolbar, $ilCtrl, $lng;
+
+		$ilToolbar->addButton(
+			$lng->txt("mob_start_migration"),
+			$ilCtrl->getLinkTarget($this, "migrateVideos"));
+
+	}
+
+	/**
+	 * Migrate Videos
+	 *
+	 * @param
+	 * @return
+	 */
+	function migrateVideos()
+	{
+		global $ilDB, $tpl;
+
+		include_once("./Services/MediaObjects/classes/class.ilObjMediaObject.php");
+		include_once("./Services/MediaObjects/classes/class.ilMediaItem.php");
+
+		$set = $ilDB->query("SELECT * FROM object_data ".
+			" WHERE type = ".$ilDB->quote("mob", "text").
+			" ORDER BY obj_id");
+		$html = "";
+		while ($rec = $ilDB->fetchAssoc($set))
+		{
+			$mob = new ilObjMediaObject($rec["obj_id"]);
+			$html.= "<br><br><b>ID: ".$mob->getId().", Title: ".$mob->getTitle()."</b>";
+
+			$this->handleMediaItem($mob, $mob->getMediaItem("Standard"), $html);
+			if ($mob->hasFullscreenItem())
+			{
+				$this->handleMediaItem($mob, $mob->getMediaItem("Fullscreen"), $html);
+			}
+		}
+
+		$tpl->setContent($html);
+	}
+
+	/**
+	 * Handle media item
+	 *
+	 * @param
+	 * @return
+	 */
+	function handleMediaItem(ilObjMediaObject $mob, ilMediaItem $item, &$html)
+	{
+		$mob_dir = ilObjMediaObject::_getDirectory($mob->getId());
+		$loc = $item->getLocation();
+		$ext = strtolower(pathinfo($loc, PATHINFO_EXTENSION));
+
+		$html.= "<br>- <b>Purpose: ".$item->getPurpose()."</b>, Type: ".$item->getLocationType().", Location: ".$item->getLocation().
+			", Mime: ".$item->getFormat().", Extension: ".$ext;
+		if ($item->getLocationType() == "LocalFile" && is_int(strpos($item->getFormat(), "video")) &&
+			$ext != "mp4")
+		{
+			$mp4_loc = substr($loc, 0, strlen($loc) - strlen($ext) - 1).".mp4";
+			$mp4_file = $mob_dir."/".$mp4_loc;
+
+
+
+			if (is_file ($mp4_file))
+			{
+				include_once("./Services/Utilities/classes/class.ilMimeTypeUtil.php");
+				$mime = ilMimeTypeUtil::getMimeType($mp4_file);
+				$item->setLocation($mp4_loc);
+				$item->setFormat($mime);
+				$item->update();
+
+				if ($item->getPurpose() == "Standard" && $mob->getTitle() == $loc)
+				{
+					$mob->setTitle($mp4_loc);
+					$mob->update();
+				}
+
+				$html.= "<br>- Location has been changed to '".$mp4_file."'.";
+			}
+			else
+			{
+				$html.= "<br>- Mp4 File '".$mp4_file."' does not exist.";
+			}
+		}
+	}
+
+
+	// oc-patch end
 }
 ?>
