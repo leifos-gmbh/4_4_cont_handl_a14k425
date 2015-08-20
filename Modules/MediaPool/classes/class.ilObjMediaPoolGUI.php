@@ -14,11 +14,11 @@ include_once("./Services/Clipboard/classes/class.ilEditClipboardGUI.php");
 *
 * @author Alex Killing <alex.killing@gmx.de>
 *
-* $Id: class.ilObjMediaPoolGUI.php 51548 2014-07-18 08:57:26Z akill $
+* $Id: class.ilObjMediaPoolGUI.php 58159 2015-02-23 19:06:35Z akill $
 *
 * @ilCtrl_Calls ilObjMediaPoolGUI: ilObjMediaObjectGUI, ilObjFolderGUI, ilEditClipboardGUI, ilPermissionGUI
 * @ilCtrl_Calls ilObjMediaPoolGUI: ilInfoScreenGUI, ilMediaPoolPageGUI, ilExportGUI, ilFileSystemGUI
-* @ilCtrl_Calls ilObjMediaPoolGUI: ilCommonActionDispatcherGUI, ilObjectCopyGUI
+* @ilCtrl_Calls ilObjMediaPoolGUI: ilCommonActionDispatcherGUI, ilObjectCopyGUI, ilObjectTranslationGUI, ilMediaPoolImportGUI
 *
 * @ingroup ModulesMediaPool
 */
@@ -270,6 +270,12 @@ class ilObjMediaPoolGUI extends ilObject2GUI
 				include_once("./Services/Export/classes/class.ilExportGUI.php");
 				$exp_gui = new ilExportGUI($this);
 				$exp_gui->addFormat("xml");
+				include_once("./Services/Object/classes/class.ilObjectTranslation.php");
+				$ot = ilObjectTranslation::getInstance($this->object->getId());
+				if ($ot->getContentActivated())
+				{
+					$exp_gui->addFormat("xml_master", "XML (".$lng->txt("mep_master_language_only").")", $this, "export");
+				}
 				$ret = $this->ctrl->forwardCommand($exp_gui);
 				$this->tpl->show();
 				break;
@@ -302,6 +308,29 @@ class ilObjMediaPoolGUI extends ilObject2GUI
 				include_once("Services/Object/classes/class.ilCommonActionDispatcherGUI.php");
 				$gui = ilCommonActionDispatcherGUI::getInstanceFromAjaxCall();
 				$this->ctrl->forwardCommand($gui);
+				break;
+
+			case 'ilobjecttranslationgui':
+				$this->prepareOutput();
+				$this->addHeaderAction();
+				//$this->setTabs("settings");
+				$ilTabs->activateTab("settings");
+				$this->setSettingsSubTabs("obj_multilinguality");
+				include_once("./Services/Object/classes/class.ilObjectTranslationGUI.php");
+				$transgui = new ilObjectTranslationGUI($this);
+				$transgui->setTitleDescrOnlyMode(false);
+				$this->ctrl->forwardCommand($transgui);
+				$this->tpl->show();
+				break;
+
+			case "ilmediapoolimportgui":
+				$this->prepareOutput();
+				$this->addHeaderAction();
+				$ilTabs->activateTab("import");
+				include_once("./Modules/MediaPool/classes/class.ilMediaPoolImportGUI.php");
+				$gui = new ilMediaPoolImportGUI($this->object);
+				$this->ctrl->forwardCommand($gui);
+				$this->tpl->show();
 				break;
 
 			default:
@@ -362,6 +391,19 @@ class ilObjMediaPoolGUI extends ilObject2GUI
 		$ni->setInfo($this->lng->txt("mep_default_width_height_info"));
 		$a_form->addItem($ni);
 	}
+
+	/**
+	 * Edit
+	 *
+	 * @param
+	 * @return
+	 */
+	function edit()
+	{
+		$this->setSettingsSubTabs("settings");
+		parent::edit();
+	}
+
 
 	protected function getEditFormCustomValues(array &$a_values)
 	{
@@ -756,6 +798,7 @@ class ilObjMediaPoolGUI extends ilObject2GUI
 							include_once("./Modules/MediaPool/classes/class.ilMediaPoolPage.php");
 							$page = new ilMediaPoolPage();
 							$page->setId($item->getId());
+							$page->setParentId($this->object->getId());
 							$page->create();
 							
 							// copy content
@@ -1103,6 +1146,7 @@ class ilObjMediaPoolGUI extends ilObject2GUI
 				include_once("./Modules/MediaPool/classes/class.ilMediaPoolPage.php");
 				$page = new ilMediaPoolPage();
 				$page->setId($item->getId());
+				$page->setParentId($this->object->getId());
 				$page->create();
 				
 				ilUtil::sendSuccess($lng->txt("mep_page_created"), true);
@@ -1264,7 +1308,7 @@ class ilObjMediaPoolGUI extends ilObject2GUI
 	function setTabs()
 	{
 		global $ilAccess, $ilTabs, $ilCtrl, $ilHelp;
-		
+
 		$ilHelp->setScreenIdComponent("mep");
 		
 		if ($ilAccess->checkAccess('read', '', $this->ref_id) ||
@@ -1310,6 +1354,9 @@ class ilObjMediaPoolGUI extends ilObject2GUI
 		{
 			$ilTabs->addTarget("export", $this->ctrl->getLinkTargetByClass("ilexportgui", ""),
 				"", "ilexportgui");
+
+			$ilTabs->addTarget("import", $this->ctrl->getLinkTargetByClass("ilmediapoolimportgui", ""),
+				"", "ilmediapoolimportgui");
 		}
 		
 		if ($ilAccess->checkAccess("edit_permission", "", $this->object->getRefId()))
@@ -1318,6 +1365,33 @@ class ilObjMediaPoolGUI extends ilObject2GUI
 				$this->ctrl->getLinkTargetByClass(array(get_class($this),'ilpermissiongui'), "perm"), array("perm","info","owner"), 'ilpermissiongui');
 		}
 
+	}
+
+	/**
+	 * Set setting sub tabs
+	 *
+	 * @param
+	 * @return
+	 */
+	function setSettingsSubTabs($a_active)
+	{
+		global $ilTabs, $lng, $ilAccess;
+
+		if ($ilAccess->checkAccess("write", "", $this->object->getRefId()))
+		{
+			$ilTabs->addSubTab("settings",
+				$lng->txt("settings"),
+				$this->ctrl->getLinkTarget($this, "edit"));
+
+			$mset = new ilSetting("mobs");
+			if ($mset->get("mep_activate_pages"))
+			{
+				$ilTabs->addSubTabTarget("obj_multilinguality",
+				$this->ctrl->getLinkTargetByClass("ilobjecttranslationgui", ""));
+			}
+		}
+
+		$ilTabs->setSubTabActive($a_active);
 	}
 
 
@@ -1540,5 +1614,22 @@ class ilObjMediaPoolGUI extends ilObject2GUI
 			$_GET["ref_id"]."&mepitem_id=".$_GET["mepitem_id"]);
 
 	}
+
+	/**
+	 * export content object
+	 */
+	function export()
+	{
+		$ot = ilObjectTranslation::getInstance($this->object->getId());
+		$opt = "";
+		if ($ot->getContentActivated())
+		{
+			$format = explode("_", $_POST["format"]);
+			$opt = ilUtil::stripSlashes($format[1]);
+		}
+
+		$this->object->exportXML(($opt == "master"));
+	}
+
 }
 ?>

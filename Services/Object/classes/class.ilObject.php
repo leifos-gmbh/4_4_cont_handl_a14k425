@@ -8,7 +8,7 @@
 *
 * @author Stefan Meyer <smeyer.ilias@gmx.de>
 * @author Alex Killing <alex.killing@gmx.de>
-* @version $Id: class.ilObject.php 54092 2014-10-07 15:06:39Z smeyer $
+* @version $Id: class.ilObject.php 58980 2015-04-22 13:41:35Z akill $
 */
 class ilObject
 {
@@ -472,7 +472,18 @@ class ilObject
 		}
 		return 0;
 	}
-	
+
+	public static function _lookupImportId($a_obj_id)
+	{
+		global $ilDB;
+
+		$query = "SELECT import_id FROM object_data ".
+			"WHERE obj_id = ".$ilDB->quote($a_obj_id, "integer");
+		$res = $ilDB->query($query);
+		$row = $ilDB->fetchObject($res);
+		return $row->import_id;
+	}
+
 	/**
 	* get object owner
 	*

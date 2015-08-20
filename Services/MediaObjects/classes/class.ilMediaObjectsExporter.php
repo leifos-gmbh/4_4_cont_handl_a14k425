@@ -73,6 +73,12 @@ class ilMediaObjectsExporter extends ilXmlExporter
 	function getValidSchemaVersions($a_entity)
 	{
 		return array (
+			"4.4.0" => array(
+				"namespace" => "http://www.ilias.de/Services/MediaObjects/mob/4_4",
+				"xsd_file" => "ilias_mob_4_4.xsd",
+				"uses_dataset" => true,
+				"min" => "4.4.0",
+				"max" => ""),
 			"4.3.0" => array(
 				"namespace" => "http://www.ilias.de/Services/MediaObjects/mob/4_3",
 				"xsd_file" => "ilias_mob_4_3.xsd",

@@ -22,7 +22,7 @@ define ("IL_NO_HEADER", "none");
 * methods for the handling of page objects in learning modules.
 *
 * @author Alex Killing <alex.killing@gmx.de>
-* @version $Id: class.ilLMPageObject.php 56999 2015-01-11 16:25:31Z akill $
+* @version $Id: class.ilLMPageObject.php 57918 2015-02-07 07:20:35Z akill $
 *
 * @ingroup ModulesIliasLearningModule
 */
@@ -81,9 +81,13 @@ class ilLMPageObject extends ilLMObject
 		$this->page_object = new ilLMPage($this->id, 0);
 	}
 
-	function create($a_upload = false)
+	function create($a_upload = false, $a_omit_page_object_creation = false)
 	{
 		parent::create($a_upload);
+		if ($a_omit_page_object_creation)
+		{
+			return;
+		}
 		if(!is_object($this->page_object))
 		{
 			$this->page_object = new ilLMPage();

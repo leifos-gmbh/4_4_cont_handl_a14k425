@@ -6,7 +6,7 @@
 *
 * @author Peter Gabriel <pgabriel@databay.de>
 * @author Alex Killing <alex.killing@gmx.de>
-* @version $Id: class.ilDBUpdate.php 46891 2013-12-17 14:51:19Z fschmid $
+* @version $Id: class.ilDBUpdate.php 57696 2015-01-31 19:31:41Z akill $
 * @ingroup ServicesDatabase
 */
 class ilDBUpdate
@@ -768,7 +768,7 @@ class ilDBUpdate
 	public function customUpdatesAvailable()
 	{
 		// trunk does not support custom updates
-		return false;
+//		return false;
 		
 		$this->readCustomUpdatesInfo();
 		if ($this->custom_updates_file_version > $this->custom_updates_current_version)

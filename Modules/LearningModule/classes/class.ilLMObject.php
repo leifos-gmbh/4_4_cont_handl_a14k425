@@ -10,7 +10,7 @@ require_once("Services/MetaData/classes/class.ilMDLanguageItem.php");
 * Base class for ilStructureObjects and ilPageObjects (see ILIAS DTD)
 *
 * @author Alex Killing <alex.killing@gmx.de>
-* @version $Id: class.ilLMObject.php 51363 2014-07-11 14:14:06Z akill $
+* @version $Id: class.ilLMObject.php 57918 2015-02-07 07:20:35Z akill $
 *
 * @ingroup ModulesIliasLearningModule
 */
@@ -599,7 +599,8 @@ class ilLMObject
 
 			// link only in learning module, that is not trashed
 			include_once("./Services/Help/classes/class.ilObjHelpSettings.php");
-			if (ilObject::_hasUntrashedReference($lm_id) ||
+			$ref_ids  = ilObject::_getAllReferences($lm_id);	// will be 0 if import of lm is in progress (new import)
+			if (count($ref_ids) == 0 || ilObject::_hasUntrashedReference($lm_id) ||
 				ilObjHelpSettings::isHelpLM($lm_id))
 			{
 				return $obj_rec["obj_id"];

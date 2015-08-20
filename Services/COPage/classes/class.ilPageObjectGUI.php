@@ -19,7 +19,7 @@ include_once("./Services/Utilities/classes/class.ilDOMUtil.php");
  *
  * @author Alex Killing <alex.killing@gmx.de>
  *
- * @version $Id: class.ilPageObjectGUI.php 56976 2015-01-09 18:25:38Z akill $
+ * @version $Id: class.ilPageObjectGUI.php 59127 2015-05-04 12:52:11Z akill $
  *
  * @ilCtrl_Calls ilPageObjectGUI: ilPageEditorGUI, ilEditClipboardGUI, ilMDEditorGUI
  * @ilCtrl_Calls ilPageObjectGUI: ilPublicUserProfileGUI, ilNoteGUI, ilNewsItemGUI
@@ -2603,13 +2603,13 @@ return;
 			$param = substr($a_html, $start + 20, $end - $start - 20);
 			$param = explode(";", $param);
 
-			if ($param[0] == "mep" && is_numeric($param[1]) && $param[2] <= 0)
+			if ($param[0] == "mep" && is_numeric($param[1]))
 			{
 				include_once("./Modules/MediaPool/classes/class.ilMediaPoolPageGUI.php");
 
-				if (ilMediaPoolPage::_exists($param[1]))
+				if (($param[2] <= 0 || $param[2] == IL_INST_ID) && ilMediaPoolPage::_exists($param[1]))
 				{
-					$page_gui = new ilMediaPoolPageGUI($param[1], 0, true, "-");
+					$page_gui = new ilMediaPoolPageGUI($param[1], 0, true, $this->getLanguage());
 					if ($this->getOutputMode() != "offline")
 					{
 						$page_gui->setFileDownloadLink($this->determineFileDownloadLink());
@@ -2627,7 +2627,14 @@ return;
 				{
 					if ($this->getOutputMode() == "edit")
 					{
-						$html = "// ".$lng->txt("cont_missing_snippet")." //";
+						if ($param[2] <= 0)
+						{
+							$html = "// ".$lng->txt("cont_missing_snippet")." //";
+						}
+						else
+						{
+							$html = "// ".$lng->txt("cont_snippet_from_another_installation")." //";
+						}
 					}
 				}
 				$h2 = substr($a_html, 0, $start).
@@ -2636,6 +2643,7 @@ return;
 				$a_html = $h2;
 				$i++;
 			}
+
 			$start = strpos($a_html, "{{{{{ContentInclude;", $start + 5);
 			$end = 0;
 			if (is_int($start))
@@ -3824,7 +3832,11 @@ return;
 		global $ilCtrl;
 		
 		$l = ilUtil::stripSlashes($_GET["totransl"]);
-		$this->getPageObject()->copyPageToTranslation($l);
+
+		include_once("./Services/COPage/classes/class.ilPageObjectFactory.php");
+		$p = ilPageObjectFactory::getInstance($this->getPageObject()->getParentType(),
+			$this->getPageObject()->getId(), 0, "-");
+		$p->copyPageToTranslation($l);
 		$ilCtrl->setParameter($this, "transl", $l);
 		$ilCtrl->redirect($this, "edit");
 	}

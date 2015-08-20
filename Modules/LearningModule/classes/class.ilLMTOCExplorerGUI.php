@@ -15,6 +15,7 @@ class ilLMTOCExplorerGUI extends ilLMExplorerGUI
 {
 	protected $lang;
 	protected $highlight_node;
+	protected $export_all_languages;
 
 	/**
 	 * Constructor
@@ -24,7 +25,8 @@ class ilLMTOCExplorerGUI extends ilLMExplorerGUI
 	 * @param ilLMPresentationGUI $a_lm_pres learning module presentation gui object
 	 * @param string $a_lang language
 	 */
-	function __construct($a_parent_obj, $a_parent_cmd, ilLMPresentationGUI $a_lm_pres, $a_lang = "-")
+	function __construct($a_parent_obj, $a_parent_cmd, ilLMPresentationGUI $a_lm_pres, $a_lang = "-",
+						 $export_all_languages = false)
 	{
 		$this->lm_pres = $a_lm_pres;
 		$this->lm = $this->lm_pres->lm;
@@ -35,7 +37,7 @@ class ilLMTOCExplorerGUI extends ilLMExplorerGUI
 		{
 			$this->setTypeWhiteList(array("st", "du"));
 		}
-
+		$this->export_all_languages = $export_all_languages;
 	}
 
 	/**
@@ -83,7 +85,7 @@ class ilLMTOCExplorerGUI extends ilLMExplorerGUI
 	{
 		if ($a_node["child"] == $this->getNodeId($this->getRootNode()))
 		{
-			return $this->lm->getTitle();
+			return $this->lm_pres->getLMPresentationTitle();
 		}
 
 		if ($a_node["type"] == "st")
@@ -289,12 +291,22 @@ class ilLMTOCExplorerGUI extends ilLMExplorerGUI
 					}
 				}
 			}
+
+			$lang_suffix = "";
+			if ($this->export_all_languages)
+			{
+				if ($this->lang != "" && $this->lang != "-")
+				{
+					$lang_suffix = "_".$this->lang;
+				}
+			}
+
 			include_once("./Modules/LearningModule/classes/class.ilLMPageObject.php");
 			if ($nid = ilLMPageObject::getExportId($this->lm->getId(), $a_node["child"]))
 			{
-				return "lm_pg_".$nid.".html";
+				return "lm_pg_".$nid.$lang_suffix.".html";
 			}
-			return "lm_pg_".$a_node["child"].".html";
+			return "lm_pg_".$a_node["child"].$lang_suffix.".html";
 		}
 
 	}

@@ -9,7 +9,7 @@ require_once("./Modules/LearningModule/classes/class.ilObjContentObject.php");
 * @author Alex Killing <alex.killing@gmx.de>
 * @author Databay AG <ay@databay.de>
 *
-* @version $Id: class.ilContObjectExport.php 47755 2014-02-07 09:18:53Z akill $
+* @version $Id: class.ilContObjectExport.php 57919 2015-02-08 18:17:31Z akill $
 *
 * @ingroup ModulesIliasLearningModule
 */
@@ -91,7 +91,7 @@ class ilContObjectExport
 	*   @access public
 	*   @return
 	*/
-	function buildExportFile()
+	function buildExportFile($a_master_only = false)
 	{
 		switch ($this->mode)
 		{
@@ -108,7 +108,7 @@ class ilContObjectExport
 				break;
 
 			default:
-				return $this->buildExportFileXML();
+				return $this->buildExportFileXML($a_master_only);
 				break;
 		}
 	}
@@ -116,9 +116,19 @@ class ilContObjectExport
 	/**
 	* build xml export file
 	*/
-	function buildExportFileXML()
+	function buildExportFileXML($a_master_only = false)
 	{
 		global $ilBench;
+
+		if ($a_master_only)
+		{
+			include_once("./Services/Export/classes/class.ilExport.php");
+			$exp = new ilExport();
+			$conf = $exp->getConfig("Modules/LearningModule");
+			$conf->setMasterLanguageOnly(true);
+			$exp->exportObject($this->cont_obj->getType(),$this->cont_obj->getId(), "4.4.0");
+			return;
+		}
 
 		$ilBench->start("ContentObjectExport", "buildExportFile");
 

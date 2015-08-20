@@ -11,7 +11,7 @@ include_once('Modules/File/classes/class.ilFSStorageFile.php');
 * Class ilObjFile
 *
 * @author Sascha Hofmann <shofmann@databay.de> 
-* @version $Id: class.ilObjFile.php 47240 2014-01-14 14:39:29Z akill $
+* @version $Id: class.ilObjFile.php 57918 2015-02-07 07:20:35Z akill $
 *
 * @ingroup ModulesFile
 */
@@ -949,11 +949,17 @@ class ilObjFile extends ilObject2
 	{
 		global $ilDB;
 
+		$lstr = "";
+		if ($a_usage_lang != "")
+		{
+			$lstr = "usage_lang = ".$ilDB->quote((string) $a_usage_lang, "text")." AND ";
+		}
+
 		// get usages in learning modules
 		$q = "SELECT * FROM file_usage WHERE ".
 			"usage_id = ".$ilDB->quote((int) $a_id, "integer")." AND ".
 			"usage_type = ".$ilDB->quote((string) $a_type, "text")." AND ".
-			"usage_lang = ".$ilDB->quote((string) $a_usage_lang, "text")." AND ".
+			$lstr.
 			"usage_hist_nr = ".$ilDB->quote((int) $a_usage_hist_nr, "integer");
 		$file_set = $ilDB->query($q);
 		$ret = array();
