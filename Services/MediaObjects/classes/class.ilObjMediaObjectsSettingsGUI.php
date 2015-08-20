@@ -236,20 +236,25 @@ class ilObjMediaObjectsSettingsGUI extends ilObjectGUI
 		$set = $ilDB->query("SELECT * FROM object_data ".
 			" WHERE type = ".$ilDB->quote("mob", "text").
 			" ORDER BY obj_id");
-		$html = "";
+		$html_all = "";
 		while ($rec = $ilDB->fetchAssoc($set))
 		{
 			$mob = new ilObjMediaObject($rec["obj_id"]);
-			$html.= "<br><br><b>ID: ".$mob->getId().", Title: ".$mob->getTitle()."</b>";
+			$html = "<br><br><b>ID: ".$mob->getId().", Title: ".$mob->getTitle()."</b>";
 
-			$this->handleMediaItem($mob, $mob->getMediaItem("Standard"), $html);
+			$a = $b = false;
+			$a = $this->handleMediaItem($mob, $mob->getMediaItem("Standard"), $html);
 			if ($mob->hasFullscreenItem())
 			{
-				$this->handleMediaItem($mob, $mob->getMediaItem("Fullscreen"), $html);
+				$b = $this->handleMediaItem($mob, $mob->getMediaItem("Fullscreen"), $html);
+			}
+			if ($a || $b)
+			{
+				$html_all.= $html;
 			}
 		}
 
-		$tpl->setContent($html);
+		$tpl->setContent($html_all);
 	}
 
 	/**
@@ -263,7 +268,7 @@ class ilObjMediaObjectsSettingsGUI extends ilObjectGUI
 		$mob_dir = ilObjMediaObject::_getDirectory($mob->getId());
 		$loc = $item->getLocation();
 		$ext = strtolower(pathinfo($loc, PATHINFO_EXTENSION));
-
+		$found = false;
 		$html.= "<br>- <b>Purpose: ".$item->getPurpose()."</b>, Type: ".$item->getLocationType().", Location: ".$item->getLocation().
 			", Mime: ".$item->getFormat().", Extension: ".$ext;
 		if ($item->getLocationType() == "LocalFile" && is_int(strpos($item->getFormat(), "video")) &&
@@ -294,7 +299,9 @@ class ilObjMediaObjectsSettingsGUI extends ilObjectGUI
 			{
 				$html.= "<br>- Mp4 File '".$mp4_file."' does not exist.";
 			}
+			$found = true;
 		}
+		return $found;
 	}
 
 
